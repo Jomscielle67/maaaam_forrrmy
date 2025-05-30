@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Shopping Cart</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Shopping Cart ({{ cart_items|length }} items)</h4>
+                    
+                    {% if cart_items %}
+                        {% for item in cart_items %}
+                        <div class="cart-item border-bottom pb-4 mb-4 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <img src="{{ item.image }}" alt="{{ item.name }}" class="img-fluid rounded">
+                                </div>
+                                <div class="col-md-4">
+                                    <h5 class="mb-1">{{ item.name }}</h5>
+                                    <p class="text-muted small mb-1">Vendor: {{ item.vendor_name }}</p>
+                                    {% if item.size %}
+                                    <p class="text-muted small mb-0">Size: {{ item.size }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="input-group input-group-sm">
+                                        <button class="btn btn-outline-secondary decrease-quantity" type="button" 
+                                                data-product-id="{{ item.productId }}">-</button>
+                                        <input type="number" class="form-control text-center quantity-input" 
+                                               value="{{ item.quantity }}" min="1" 
+                                               data-product-id="{{ item.productId }}">
+                                        <button class="btn btn-outline-secondary increase-quantity" type="button"
+                                                data-product-id="{{ item.productId }}">+</button>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-md-end">
+                                    <p class="mb-0">${{ "%.2f"|format(item.price) }}</p>
+                                    <p class="text-muted small mb-0">${{ "%.2f"|format(item.item_total) }} total</p>
+                                    {% if item.shipping_charge > 0 %}
+                                    <p class="text-muted small mb-0">+${{ "%.2f"|format(item.shipping_charge) }} shipping</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-md-end">
+                                    <button class="btn btn-link text-danger remove-item" data-product-id="{{ item.productId }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5>Your cart is empty</h5>
+                            <p class="text-muted">Add some products to your cart to continue shopping.</p>
+                            <a href="{{ url_for('home') }}" class="btn btn-primary mt-3">Continue Shopping</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Order Summary</h4>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>${{ "%.2f"|format(subtotal) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping</span>
+                        <span>${{ "%.2f"|format(shipping_total) }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <strong>Total</strong>
+                        <strong class="text-primary">${{ "%.2f"|format(total) }}</strong>
+                    </div>
+                    
+                    <a href="{{ url_for('checkout') }}" class="btn btn-primary w-100" {% if not cart_items %}disabled{% endif %}>
+                        Proceed to Checkout
+                    </a>
+                    
+                    <a href="{{ url_for('home') }}" class="btn btn-outline-secondary w-100 mt-2">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.cart-item {
+    transition: background-color 0.3s ease;
+}
+
+.cart-item:hover {
+    background-color: #f8f9fa;
+}
+
+.quantity-input {
+    max-width: 60px;
+}
+
+.btn-link {
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: #dc3545 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update quantity
+    function updateQuantity(productId, quantity) {
+        fetch('/api/cart/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                const toast = document.getElementById('cartToast');
+                const toastMessage = document.getElementById('toastMessage');
+                toast.classList.remove('bg-danger');
+                toast.classList.add('bg-success');
+                toastMessage.textContent = 'Cart updated successfully';
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                // Reload page after a short delay
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                // Show error toast
+                const toast = document.getElementById('cartToast');
+                const toastMessage = document.getElementById('toastMessage');
+                toast.classList.remove('bg-success');
+                toast.classList.add('bg-danger');
+                toastMessage.textContent = data.message || 'Error updating cart';
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Show error toast
+            const toast = document.getElementById('cartToast');
+            const toastMessage = document.getElementById('toastMessage');
+            toast.classList.remove('bg-success');
+            toast.classList.add('bg-danger');
+            toastMessage.textContent = 'Error updating cart';
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        });
+    }
+
+    // Remove item
+    function removeItem(productId) {
+        if (confirm('Are you sure you want to remove this item from your cart?')) {
+            fetch('/api/cart/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success toast
+                    const toast = document.getElementById('cartToast');
+                    const toastMessage = document.getElementById('toastMessage');
+                    toast.classList.remove('bg-danger');
+                    toast.classList.add('bg-success');
+                    toastMessage.textContent = 'Item removed from cart';
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                    // Reload page after a short delay
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    // Show error toast
+                    const toast = document.getElementById('cartToast');
+                    const toastMessage = document.getElementById('toastMessage');
+                    toast.classList.remove('bg-success');
+                    toast.classList.add('bg-danger');
+                    toastMessage.textContent = data.message || 'Error removing item';
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Show error toast
+                const toast = document.getElementById('cartToast');
+                const toastMessage = document.getElementById('toastMessage');
+                toast.classList.remove('bg-success');
+                toast.classList.add('bg-danger');
+                toastMessage.textContent = 'Error removing item';
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            });
+        }
+    }
+
+    // Event listeners
+    document.querySelectorAll('.decrease-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+            const currentValue = parseInt(input.value);
+            if (currentValue > 1) {
+                updateQuantity(productId, currentValue - 1);
+            }
+        });
+    });
+
+    document.querySelectorAll('.increase-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+            const currentValue = parseInt(input.value);
+            updateQuantity(productId, currentValue + 1);
+        });
+    });
+
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const productId = this.dataset.productId;
+            const value = parseInt(this.value);
+            if (value > 0) {
+                updateQuantity(productId, value);
+            }
+        });
+    });
+
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            removeItem(productId);
+        });
+    });
+});
+</script>
+{% endblock %} 

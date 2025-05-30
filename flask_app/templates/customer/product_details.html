@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.productName }} - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('category_products', category_id=product.category) }}">{{ product.category }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.productName }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in product.imageUrlList %}
+                        <div class="carousel-item {{ 'active' if loop.first }}">
+                            <img src="{{ image }}" class="d-block w-100" alt="{{ product.productName }}" 
+                                 style="height: 500px; object-fit: contain; background-color: #f8f9fa;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if product.imageUrlList|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if product.imageUrlList|length > 1 %}
+                <div class="card-footer bg-white border-0">
+                    <div class="row g-2">
+                        {% for image in product.imageUrlList %}
+                        <div class="col-3">
+                            <img src="{{ image }}" class="img-thumbnail" alt="Thumbnail" 
+                                 style="height: 80px; object-fit: cover; cursor: pointer;"
+                                 onclick="$('#productCarousel').carousel({{ loop.index0 }})">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h1 class="h2 mb-3">{{ product.productName }}</h1>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rating me-2">
+                            {% for i in range(5) %}
+                                <i class="fas fa-star {{ 'text-warning' if i < product.get('rating', 0) else 'text-muted' }}"></i>
+                            {% endfor %}
+                        </div>
+                        <span class="text-muted">({{ product.get('reviewCount', 0) }} reviews)</span>
+                    </div>
+                    <h2 class="text-primary mb-4">${{ "%.2f"|format(product.productPrice) }}</h2>
+                    
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p class="text-muted">{{ product.productDescription }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Brand</h5>
+                        <p class="text-muted">{{ product.brandName }}</p>
+                    </div>
+
+                    <!-- Size Selection -->
+                    {% if product.sizeList %}
+                    <div class="mb-4">
+                        <h5>Size</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for size in product.sizeList %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="size" id="size{{ loop.index }}" value="{{ size }}">
+                                <label class="form-check-label" for="size{{ loop.index }}">
+                                    {{ size }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h5>Availability</h5>
+                        {% if product.quantity > 0 %}
+                            <p class="text-success mb-0">
+                                <i class="fas fa-check-circle me-2"></i>In Stock ({{ product.quantity }} available)
+                            </p>
+                        {% else %}
+                            <p class="text-danger mb-0">
+                                <i class="fas fa-times-circle me-2"></i>Out of Stock
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Shipping Information -->
+                    <div class="mb-4">
+                        <h5>Shipping Information</h5>
+                        {% if product.chargeShipping %}
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-truck me-2"></i>Shipping Charge: ${{ "%.2f"|format(product.shippingCharge) }}
+                            </p>
+                        {% else %}
+                            <p class="text-success mb-0">
+                                <i class="fas fa-truck me-2"></i>Free Shipping
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <div class="d-flex gap-3 mb-4">
+                        <div class="input-group" style="width: 150px;">
+                            <button class="btn btn-outline-secondary" type="button" id="decreaseQuantity">-</button>
+                            <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="{{ product.quantity }}">
+                            <button class="btn btn-outline-secondary" type="button" id="increaseQuantity">+</button>
+                        </div>
+                        <button class="btn btn-primary flex-grow-1 add-to-cart" data-product-id="{{ product.productId }}"
+                                {% if product.quantity == 0 %}disabled{% endif %}>
+                            <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                        </button>
+                    </div>
+
+                    <!-- Additional Info -->
+                    <div class="border-top pt-4">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted mb-2">Product ID</h6>
+                                <p class="mb-0">{{ product.productId }}</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted mb-2">Category</h6>
+                                <p class="mb-0">{{ product.category }}</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted mb-2">Created At</h6>
+                                <p class="mb-0">{{ product.createdAt.strftime('%B %d, %Y') if product.createdAt else 'N/A' }}</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted mb-2">Last Updated</h6>
+                                <p class="mb-0">{{ product.updatedAt.strftime('%B %d, %Y') if product.updatedAt else 'N/A' }}</p>
+                            </div>
+                            {% if product.scheduleDate %}
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted mb-2">Scheduled Date</h6>
+                                <p class="mb-0">{{ product.scheduleDate.strftime('%B %d, %Y') }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vendor Info -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Vendor Information</h5>
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{{ vendor.storeImage|default('https://via.placeholder.com/50') }}" 
+                             alt="{{ vendor.bussinessName }}" class="rounded-circle me-3" 
+                             style="width: 50px; height: 50px; object-fit: cover;">
+                        <div>
+                            <h6 class="mb-1">{{ vendor.bussinessName }}</h6>
+                            <p class="text-muted small mb-0">{{ vendor.email }}</p>
+                        </div>
+                        {% if vendor.approved %}
+                        <span class="badge bg-success ms-auto">
+                            <i class="fas fa-check-circle me-1"></i>Verified Vendor
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted mb-2">Contact Information</h6>
+                            <p class="mb-1">
+                                <i class="fas fa-phone me-2"></i>{{ vendor.phoneNumber }}
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-envelope me-2"></i>{{ vendor.email }}
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted mb-2">Location</h6>
+                            <p class="mb-1">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ vendor.cityValue }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-map me-2"></i>{{ vendor.stateValue }}
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-globe me-2"></i>{{ vendor.countryValue }}
+                            </p>
+                        </div>
+                        {% if vendor.taxRegistered == "Yes" %}
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-file-invoice me-2"></i>
+                                Tax Registered Business
+                                {% if vendor.taxNumber %}
+                                <br>
+                                <small>Tax Number: {{ vendor.taxNumber }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="mb-4">Customer Reviews</h3>
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="border-bottom pb-4 mb-4 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-3">
+                                    {% if review.userImage %}
+                                        <img src="{{ review.userImage }}" class="rounded-circle" 
+                                             alt="{{ review.userName }}" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px;">
+                                            {{ review.userName[0]|upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{{ review.userName }}</h6>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rating me-2">
+                                            {% for i in range(5) %}
+                                                <i class="fas fa-star {{ 'text-warning' if i < review.rating else 'text-muted' }} small"></i>
+                                            {% endfor %}
+                                        </div>
+                                        {% if review.isVerifiedPurchase %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-check-circle me-1"></i>Verified Purchase
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <small class="text-muted ms-auto">
+                                    {{ review.createdAt.strftime('%B %d, %Y') if review.createdAt else 'Unknown date' }}
+                                </small>
+                            </div>
+                            <p class="card-text mb-0">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No reviews yet. Be the first to review this product!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Related Products</h3>
+            <div class="row g-4">
+                {% for related in related_products %}
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('product_details', product_id=related.productId) }}" class="text-decoration-none">
+                        <div class="card product-card h-100 border-0 shadow-sm hover-shadow">
+                            <img src="{{ related.imageUrlList[0] if related.imageUrlList else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                                 class="card-img-top" alt="{{ related.productName }}" 
+                                 style="height: 200px; object-fit: cover;">
+                            <div class="card-body p-3">
+                                <h5 class="card-title text-dark text-truncate mb-1">{{ related.productName }}</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="text-primary mb-0">${{ "%.2f"|format(related.productPrice) }}</h6>
+                                    <div class="rating">
+                                        {% for i in range(5) %}
+                                            <i class="fas fa-star {{ 'text-warning' if i < related.get('rating', 0) else 'text-muted' }} small"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hover-shadow {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.rating .fa-star {
+    font-size: 0.9rem;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 10%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.carousel:hover .carousel-control-prev,
+.carousel:hover .carousel-control-next {
+    opacity: 0.8;
+}
+
+.img-thumbnail {
+    transition: border-color 0.3s ease;
+}
+
+.img-thumbnail:hover {
+    border-color: #0d6efd;
+}
+
+.form-check-input:checked + .form-check-label {
+    color: #0d6efd;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const decreaseBtn = document.getElementById('decreaseQuantity');
+    const increaseBtn = document.getElementById('increaseQuantity');
+    const maxQuantity = {{ product.quantity }};
+
+    decreaseBtn.addEventListener('click', function() {
+        const currentValue = parseInt(quantityInput.value);
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+        }
+    });
+
+    increaseBtn.addEventListener('click', function() {
+        const currentValue = parseInt(quantityInput.value);
+        if (currentValue < maxQuantity) {
+            quantityInput.value = currentValue + 1;
+        }
+    });
+
+    quantityInput.addEventListener('change', function() {
+        let value = parseInt(this.value);
+        if (isNaN(value) || value < 1) {
+            value = 1;
+        } else if (value > maxQuantity) {
+            value = maxQuantity;
+        }
+        this.value = value;
+    });
+
+    // Add to cart functionality
+    document.querySelector('.add-to-cart').addEventListener('click', function() {
+        const productId = this.dataset.productId;
+        const quantity = parseInt(quantityInput.value);
+        const size = document.querySelector('input[name="size"]:checked')?.value;
+        
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: quantity,
+                size: size
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                const toast = document.getElementById('cartToast');
+                const toastMessage = document.getElementById('toastMessage');
+                toastMessage.textContent = data.message || 'Item added to cart successfully!';
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            } else {
+                // Show error toast
+                const toast = document.getElementById('cartToast');
+                const toastMessage = document.getElementById('toastMessage');
+                toast.classList.remove('bg-success');
+                toast.classList.add('bg-danger');
+                toastMessage.textContent = data.message || 'Error adding item to cart';
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Show error toast
+            const toast = document.getElementById('cartToast');
+            const toastMessage = document.getElementById('toastMessage');
+            toast.classList.remove('bg-success');
+            toast.classList.add('bg-danger');
+            toastMessage.textContent = 'Error adding item to cart';
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        });
+    });
+});
+</script>
+{% endblock %} 

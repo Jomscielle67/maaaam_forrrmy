@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Search Results</li>
+                </ol>
+            </nav>
+            <h1 class="mb-3">Search Results for "{{ query }}"</h1>
+            <p class="text-muted">Found {{ result_count }} results</p>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    <div class="row">
+        {% if products %}
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <img src="{{ product.imageUrlList[0] if product.imageUrlList else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                         class="card-img-top" alt="{{ product.productName }}" 
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.productName }}</h5>
+                        <p class="card-text text-muted">{{ product.brandName }}</p>
+                        <p class="card-text">${{ "%.2f"|format(product.productPrice) }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="rating">
+                                {% for i in range(5) %}
+                                    <i class="fas fa-star {{ 'text-warning' if i < product.rating else 'text-muted' }}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="text-muted">({{ product.reviewCount }})</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <a href="{{ url_for('product_details', product_id=product.id) }}" class="btn btn-primary w-100">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No products found matching "{{ query }}". Try different keywords or browse our categories.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.rating .fa-star {
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %} 

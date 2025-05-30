@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Hero Section with Full Width -->
+    <div class="hero-section text-white py-5 mb-5">
+        <div class="hero-overlay"></div>
+        <div class="container position-relative">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-4 fw-bold mb-3 text-white">Elevate Your Style</h1>
+                    <p class="lead mb-4 text-white-75">Discover premium men's fashion that defines sophistication and comfort.</p>
+                    <div class="search-box bg-white rounded-pill p-2 shadow">
+                        <div class="input-group">
+                            <input type="text" class="form-control border-0" placeholder="Search products..." id="searchInput">
+                            <button class="btn btn-dark rounded-pill px-4" type="button">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 d-none d-md-block">
+                    <div class="hero-image-container">
+                        <img src="https://images.unsplash.com/photo-1617137968427-85924c800a22?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                             alt="Men's Fashion" class="img-fluid rounded-3 shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Categories Section with Cards -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title">Shop by Category</h2>
+                <a href="{{ url_for('all_products') }}" class="btn btn-outline-dark">View All Categories</a>
+            </div>
+            <div class="row g-4">
+                {% for category in categories %}
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('category_products', category_id=category.id) }}" class="text-decoration-none">
+                        <div class="card category-card h-100 border-0 shadow-sm hover-shadow">
+                            <div class="position-relative overflow-hidden">
+                                <img src="{{ category.imageUrl }}" class="card-img-top" alt="{{ category.name }}" 
+                                     style="height: 200px; object-fit: cover;">
+                                <div class="category-overlay"></div>
+                                <div class="category-icon position-absolute top-50 start-50 translate-middle">
+                                    <i class="fas fa-{{ category.icon|default('shopping-bag') }} fa-2x text-white"></i>
+                                </div>
+                            </div>
+                            <div class="card-body text-center p-3">
+                                <h5 class="card-title text-dark mb-0">{{ category.name }}</h5>
+                                <p class="text-muted small mt-2">{{ category.product_count|default(0) }} Products</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- All Products Section -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title">Featured Products</h2>
+                <div class="d-flex gap-2">
+                    <select class="form-select" id="sortProducts">
+                        <option value="newest">Newest</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="rating">Top Rated</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-4" id="allProductsContainer">
+                {% for product in all_products %}
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
+                        <div class="card product-card h-100 border-0 shadow-sm hover-shadow">
+                            <div class="position-relative overflow-hidden">
+                                <img src="{{ product.imageUrlList[0] if product.imageUrlList else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                                     class="card-img-top" alt="{{ product.productName }}" 
+                                     style="height: 250px; object-fit: cover;">
+                                {% if product.quantity <= 5 and product.quantity > 0 %}
+                                <span class="badge bg-warning position-absolute top-0 end-0 m-2">Low Stock</span>
+                                {% elif product.quantity == 0 %}
+                                <span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>
+                                {% endif %}
+                                <div class="product-overlay"></div>
+                            </div>
+                            <div class="card-body p-3">
+                                <h5 class="card-title text-dark text-truncate mb-1">{{ product.productName }}</h5>
+                                <p class="card-text text-muted small mb-2">{{ product.brandName }}</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="text-dark mb-0">${{ "%.2f"|format(product.productPrice) }}</h5>
+                                    <div class="rating">
+                                        {% for i in range(5) %}
+                                            <i class="fas fa-star {{ 'text-warning' if i < product.rating else 'text-muted' }} small"></i>
+                                        {% endfor %}
+                                        <small class="text-muted ms-1">({{ product.reviewCount }})</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top-0 p-3">
+                                <button class="btn btn-dark w-100 add-to-cart" data-product-id="{{ product.id }}"
+                                        {% if product.quantity == 0 %}disabled{% endif %}>
+                                    <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Special Offers Section -->
+        <section class="mb-5">
+            <div class="card bg-dark text-white">
+                <div class="card-body p-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="mb-3">Special Offers</h3>
+                            <p class="lead mb-0">Get 20% off on your first purchase! Use code: WELCOME20</p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <a href="{{ url_for('all_products') }}" class="btn btn-light btn-lg">Shop Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    background: url('https://images.unsplash.com/photo-1617137968427-85924c800a22?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%);
+}
+
+.hero-image-container {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-image-container img {
+    transform: perspective(1000px) rotateY(-5deg);
+    transition: transform 0.3s ease;
+}
+
+.hero-image-container:hover img {
+    transform: perspective(1000px) rotateY(0deg);
+}
+
+.section-title {
+    position: relative;
+    padding-bottom: 10px;
+    font-weight: 600;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 50px;
+    height: 3px;
+    background-color: #000;
+}
+
+.category-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.category-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.category-card:hover .category-overlay {
+    opacity: 1;
+}
+
+.category-icon {
+    background-color: rgba(0, 0, 0, 0.7);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-icon {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.product-card:hover .product-overlay {
+    opacity: 1;
+}
+
+.search-box {
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.rating .fa-star {
+    font-size: 0.8rem;
+}
+
+.btn-dark {
+    background-color: #000;
+    border-color: #000;
+}
+
+.btn-dark:hover {
+    background-color: #333;
+    border-color: #333;
+}
+
+.form-select {
+    border-color: #ddd;
+}
+
+.form-select:focus {
+    border-color: #000;
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add to cart functionality
+document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', function() {
+        const productId = this.dataset.productId;
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                const toast = new bootstrap.Toast(document.createElement('div'));
+                toast.show();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const searchButton = searchInput.nextElementSibling;
+
+function performSearch() {
+    const searchTerm = searchInput.value.trim();
+    if (searchTerm) {
+        window.location.href = `/search?q=${encodeURIComponent(searchTerm)}`;
+    }
+}
+
+// Add click event listener to search button
+searchButton.addEventListener('click', performSearch);
+
+// Add enter key event listener to search input
+searchInput.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        performSearch();
+    }
+});
+
+// Sort products
+document.getElementById('sortProducts').addEventListener('change', function() {
+    const sortValue = this.value;
+    window.location.href = `{{ url_for('all_products') }}?sort=${sortValue}`;
+});
+</script>
+{% endblock %}

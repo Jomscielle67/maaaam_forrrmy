@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "327933117316",
+    "project_id": "daddy-ecom-store",
+    "storage_bucket": "daddy-ecom-store.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:327933117316:android:dd9a8307291dbd283793d1",
+        "android_client_info": {
+          "package_name": "com.example.daddies_store_ecom"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "327933117316-ortac7os3tn87ai3qpikh49jgb0db9nl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.daddies_store_ecom",
+            "certificate_hash": "34a9869516fb7fed0839e84ea53b3ae1d9b568d3"
+          }
+        },
+        {
+          "client_id": "327933117316-oq6uitsqv21fpqk3b3rdl9b29ho0unga.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc-4uj4UEZuwXJ1aWyuAjp6ZjhLmdKZH8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "327933117316-oq6uitsqv21fpqk3b3rdl9b29ho0unga.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

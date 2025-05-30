@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Order Details</h1>
+                <a href="{{ url_for('orders') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Orders
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in order.products %}
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            {% if item.imageUrl %}
+                            <img src="{{ item.imageUrl }}" alt="{{ item.productName }}" class="img-fluid rounded">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-1">{{ item.productName }}</h5>
+                            <p class="text-muted mb-0">Size: {{ item.size|default('N/A') }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-0">Qty: {{ item.quantity }}</p>
+                            <p class="text-muted small mb-0">₱{{ "%.2f"|format(item.price) }} each</p>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <p class="mb-0">₱{{ "%.2f"|format(item.price * item.quantity) }}</p>
+                        </div>
+                    </div>
+                    {% if not loop.last %}
+                    <hr>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Shipping Address</h6>
+                            {% if order.shippingAddress %}
+                            <p class="mb-0">
+                                <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                {{ order.shippingAddress }}
+                            </p>
+                            {% else %}
+                            <p class="mb-0 text-muted">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                No address provided
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Contact Information</h6>
+                            <p class="mb-0">
+                                Name: {{ order.buyerName }}<br>
+                                Phone: {{ order.buyerPhone }}
+                            </p>
+                            {% if order.courierName %}
+                            <p class="mb-0 mt-2">
+                                <i class="fas fa-truck text-muted me-2"></i>
+                                Courier: {{ order.courierName }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Order Number</span>
+                        <span>#{{ order.orderId }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Order Date</span>
+                        <span>{{ order.createdAt.strftime('%B %d, %Y') if order.createdAt else 'N/A' }}</span>
+                    </div>
+                    {% if order.pickedUpAt %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Picked Up</span>
+                        <span>{{ order.pickedUpAt.strftime('%B %d, %Y %H:%M') }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Status</span>
+                        <span class="badge bg-{{ order.status|status_color }}">
+                            {{ order.status|title }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Payment Method</span>
+                        <span>{{ order.paymentMethod|title }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>₱{{ "%.2f"|format(order.totalAmount) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping</span>
+                        <span>Free</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total</strong>
+                        <strong>₱{{ "%.2f"|format(order.totalAmount) }}</strong>
+                    </div>
+                    {% if order.status == 'pending' %}
+                    <button class="btn btn-danger w-100" onclick="cancelOrder('{{ order.orderId }}')">
+                        Cancel Order
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cancelOrder(orderId) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        fetch(`/api/order/cancel/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order cancelled successfully');
+                window.location.href = "{{ url_for('orders') }}";
+            } else {
+                alert(data.message || 'Failed to cancel order');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while cancelling the order');
+        });
+    }
+}
+</script>
+{% endblock %} 

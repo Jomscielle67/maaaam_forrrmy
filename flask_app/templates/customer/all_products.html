@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}All Products - Daddy's Store{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+                    <li class="breadcrumb-item active">All Products</li>
+                </ol>
+            </nav>
+            <h1 class="mb-3">All Products</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Categories</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for category in categories %}
+                        <a href="{{ url_for('category_products', category_id=category.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            {{ category.categoryName }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filter-form">
+                        <div class="mb-3">
+                            <label for="sort" class="form-label">Sort By</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="newest" {{ 'selected' if current_sort == 'newest' }}>Newest</option>
+                                <option value="price_low" {{ 'selected' if current_sort == 'price_low' }}>Price: Low to High</option>
+                                <option value="price_high" {{ 'selected' if current_sort == 'price_high' }}>Price: High to Low</option>
+                                <option value="rating" {{ 'selected' if current_sort == 'rating' }}>Rating</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price_range" class="form-label">Price Range</label>
+                            <select class="form-select" id="price_range" name="price_range">
+                                <option value="">All Prices</option>
+                                <option value="0-25" {{ 'selected' if current_price_range == '0-25' }}>$0 - $25</option>
+                                <option value="25-50" {{ 'selected' if current_price_range == '25-50' }}>$25 - $50</option>
+                                <option value="50-100" {{ 'selected' if current_price_range == '50-100' }}>$50 - $100</option>
+                                <option value="100+" {{ 'selected' if current_price_range == '100+' }}>$100+</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">Minimum Rating</label>
+                            <select class="form-select" id="rating" name="rating">
+                                <option value="">Any Rating</option>
+                                <option value="4" {{ 'selected' if current_rating == '4' }}>4+ Stars</option>
+                                <option value="3" {{ 'selected' if current_rating == '3' }}>3+ Stars</option>
+                                <option value="2" {{ 'selected' if current_rating == '2' }}>2+ Stars</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="col-md-9">
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="{{ product.imageUrlList[0] }}" class="card-img-top" alt="{{ product.productName }}" 
+                             style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.productName }}</h5>
+                            <p class="card-text text-muted">{{ product.brandName }}</p>
+                            <p class="card-text">${{ "%.2f"|format(product.productPrice) }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="rating">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {{ 'text-warning' if i < product.rating else 'text-muted' }}"></i>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-muted">({{ product.reviewCount }})</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <button class="btn btn-primary w-100 add-to-cart" data-product-id="{{ product.id }}">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        No products found matching your criteria.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add to cart functionality
+document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', function() {
+        const productId = this.dataset.productId;
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const toast = new bootstrap.Toast(document.createElement('div'));
+                toast.show();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+
+// Filter form submission
+document.getElementById('filter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const params = new URLSearchParams(formData);
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+});
+</script>
+{% endblock %} 
